@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_saleorder_custom_document">
+        <t t-call="web.external_layout">
+            <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)"/>
+            <t t-set="address">
+                <div t-field="doc.partner_id" t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True, "phone_icons": True}'/>
+            </t>
+
+            <!-- Set currency with fallback -->
+            <t t-set="currency" t-value="doc.currency_id or doc.pricelist_id.currency_id or doc.company_id.currency_id"/>
+
+            <!-- Custom CSS -->
+            <style type="text/css">
+                .custom-blue-header {
+                    background-color: #5DADE2;
+                    color: white;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                    font-size: 16px;
+                    margin-bottom: 0;
+                }
+
+                .info-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+
+                .info-table td {
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                }
+
+                .info-table td:first-child {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                    width: 30%;
+                }
+
+                .financial-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+
+                .financial-table th {
+                    background-color: #f8f9fa;
+                    padding: 10px;
+                    border: 1px solid #ddd;
+                    font-weight: bold;
+                    text-align: center;
+                }
+
+                .financial-table td {
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                }
+
+                .financial-table .text-right {
+                    text-align: right;
+                }
+
+                .financial-table .text-center {
+                    text-align: center;
+                }
+
+                .subtotal-row {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                }
+
+                .total-row {
+                    background-color: #5DADE2;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 16px;
+                }
+
+                .quotation-header {
+                    text-align: right;
+                    margin-bottom: 30px;
+                }
+
+                .quotation-header h3 {
+                    margin: 5px 0;
+                }
+
+                .terms-section {
+                    margin-top: 30px;
+                }
+
+                .terms-content {
+                    white-space: pre-line;
+                    line-height: 1.6;
+                    font-size: 14px;
+                }
+
+                .terms-content ul {
+                    list-style: none;
+                    padding-left: 0;
+                    margin: 10px 0;
+                }
+
+                .terms-content ul li {
+                    margin-bottom: 8px;
+                    position: relative;
+                    padding-left: 20px;
+                }
+
+                .terms-content ul li:before {
+                    content: "✓";
+                    color: #28a745;
+                    font-weight: bold;
+                    position: absolute;
+                    left: 0;
+                }
+
+                .page-break {
+                    page-break-before: always;
+                }
+
+                .additional-service-box {
+                    border: 1px solid #ddd;
+                    padding: 15px;
+                    min-height: 100px;
+                    background-color: #f9f9f9;
+                    border-radius: 4px;
+                }
+            </style>
+
+            <!-- Document Content -->
+            <div class="page">
+                <!-- Quotation Header -->
+                <div class="quotation-header">
+                    <h3>
+                        <strong>Quotation Number: </strong>
+                        <span t-field="doc.name"/>
+                    </h3>
+                    <h3>
+                        <strong>Date: </strong>
+                        <span t-field="doc.date_order" t-options='{"widget": "date"}'/>
+                    </h3>
+                </div>
+
+                <!-- Customer Details Section -->
+                <div class="mt-4">
+                    <h4 class="custom-blue-header">Customer Details</h4>
+                    <table class="info-table">
+                        <tr>
+                            <td>Customer Name</td>
+                            <td><span t-field="doc.partner_id.name"/></td>
+                        </tr>
+                        <tr>
+                            <td>Company Name</td>
+                            <td><span t-esc="doc.partner_id.parent_id.name or '-'"/></td>
+                        </tr>
+                        <tr>
+                            <td>Phone Number</td>
+                            <td><span t-esc="doc.partner_id.phone or '-'"/></td>
+                        </tr>
+                        <tr t-if="doc.project_name or doc.client_order_ref">
+                            <td>Project</td>
+                            <td><span t-esc="doc.project_name or doc.client_order_ref or '-'"/></td>
+                        </tr>
+                        <tr t-if="doc.service_type or doc.categ_id">
+                            <td>Service Type</td>
+                            <td><span t-esc="doc.service_type or doc.categ_id.name or '-'"/></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Financial Offer Section -->
+                <div class="mt-4">
+                    <h4 class="custom-blue-header">Financial Offer</h4>
+                    <table class="financial-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Description</th>
+                                <th style="width: 15%;">Quantity</th>
+                                <th style="width: 20%;">Unit Price</th>
+                                <th style="width: 25%;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Group order lines by category or section -->
+                            <t t-set="current_subtotal" t-value="0"/>
+                            <t t-foreach="doc.order_line" t-as="line">
+                                <t t-if="not line.display_type">
+                                    <tr>
+                                        <td>
+                                            <span t-field="line.name"/>
+                                            <t t-if="line.product_id.default_code">
+                                                <br/>[<span t-field="line.product_id.default_code"/>]
+                                            </t>
+                                        </td>
+                                        <td class="text-center">
+                                            <span t-field="line.product_uom_qty"/>
+                                            <span t-if="line.product_uom" t-field="line.product_uom" groups="uom.group_uom"/>
+                                        </td>
+                                        <td class="text-right">
+                                            <span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                                        </td>
+                                        <td class="text-right">
+                                            <span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                                        </td>
+                                    </tr>
+                                    <t t-set="current_subtotal" t-value="current_subtotal + line.price_subtotal"/>
+                                </t>
+
+                                <!-- Section lines -->
+                                <t t-if="line.display_type == 'line_section'">
+                                    <tr t-if="current_subtotal > 0" class="subtotal-row">
+                                        <td colspan="3" class="text-right">Subtotal:</td>
+                                        <td class="text-right">
+                                            <t t-esc="'{:,.2f} {}'.format(current_subtotal, currency.symbol or '')"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="4" style="background-color: #e9ecef; font-weight: bold; padding: 10px;">
+                                            <span t-field="line.name"/>
+                                        </td>
+                                    </tr>
+                                    <t t-set="current_subtotal" t-value="0"/>
+                                </t>
+                            </t>
+
+                            <!-- Final subtotal if needed -->
+                            <tr t-if="current_subtotal > 0" class="subtotal-row">
+                                <td colspan="3" class="text-right">Subtotal:</td>
+                                <td class="text-right">
+                                    <t t-esc="'{:,.2f} {}'.format(current_subtotal, currency.symbol or '')"/>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="3" class="text-right">Total Amount</td>
+                                <td class="text-right">
+                                    <span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Additional Service Optional Section -->
+                <t t-set="additional_content" t-value="''"/>
+                <t t-if="doc.note">
+                    <t t-set="note_lines" t-value="doc.note.split('\n')"/>
+                    <t t-set="terms_started" t-value="False"/>
+                    <t t-foreach="note_lines" t-as="note_line">
+                        <t t-if="'Payment Terms' not in note_line and not terms_started">
+                            <t t-set="additional_content" t-value="additional_content + note_line + '\n'"/>
+                        </t>
+                        <t t-if="'Payment Terms' in note_line">
+                            <t t-set="terms_started" t-value="True"/>
+                        </t>
+                    </t>
+                </t>
+
+                <div class="mt-4" t-if="additional_content.strip()">
+                    <h4>Additional Service "optional"</h4>
+                    <div class="additional-service-box">
+                        <span t-esc="additional_content"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms and Conditions Page -->
+            <div class="page page-break" t-if="doc.note">
+                <div class="terms-section">
+                    <h4 class="custom-blue-header">Terms &amp; Conditions</h4>
+
+                    <div class="terms-content" style="margin-top: 20px;">
+                        <span t-field="doc.note"/>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Main report template -->
+    <template id="report_saleorder_custom">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="sale_category_filter.report_saleorder_custom_document" t-lang="doc.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>
