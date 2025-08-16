@@ -19,8 +19,8 @@
                 <field name="service_type" placeholder="e.g., Gas Boiler"/>
             </xpath>
 
-            <!-- Add domain filter to product_id in order lines tree view -->
-            <xpath expr="//field[@name='order_line']//tree//field[@name='product_id']" position="attributes">
+            <!-- Add domain filter to product_id in order lines list view -->
+            <xpath expr="//field[@name='order_line']//list//field[@name='product_id']" position="attributes">
                 <attribute name="domain">[
                     '|',
                         ('categ_id', '=', False),
@@ -33,8 +33,8 @@
                 ]</attribute>
             </xpath>
 
-            <!-- Add domain filter to product_template_id in order lines tree view -->
-            <xpath expr="//field[@name='order_line']//tree//field[@name='product_template_id']" position="attributes">
+            <!-- Add domain filter to product_template_id in order lines list view -->
+            <xpath expr="//field[@name='order_line']//list//field[@name='product_template_id']" position="attributes">
                 <attribute name="domain">[
                     '|',
                         ('categ_id', '=', False),
@@ -50,11 +50,11 @@
     </record>
 
 
-    <!-- Optional: Add category field to tree view -->
-    <record id="view_order_tree_inherit_category" model="ir.ui.view">
-        <field name="name">sale.order.tree.inherit.category</field>
+    <!-- Optional: Add category field to list view -->
+    <record id="view_order_list_inherit_category" model="ir.ui.view">
+        <field name="name">sale.order.list.inherit.category</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_tree"/>
+        <field name="inherit_id" ref="sale.view_order_list"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="categ_id" optional="show"/>
